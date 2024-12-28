@@ -36,7 +36,6 @@ export class CourseController {
     async getCourses(req, res) {
         try {
             const { role, id } = req.user;
-
             let courses;
             if (role === "Admin") {
                 courses = await Course.find().populate("teacher", "name email");

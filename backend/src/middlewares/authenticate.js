@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { Config } from '../config/index.js';
+import User from '../models/User.js';
 
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
     // Get token from Authorization header
     const token = req.cookies['jwt-token'] || req.headers.authorization?.split(' ')[1];
 
@@ -13,10 +14,14 @@ const authenticate = (req, res, next) => {
     try {
         // Verify token
         const decoded = jwt.verify(token, Config.ACCESS_TOKEN_SECRET);
+        const user = await User.findById(decoded.id)
 
+        if (!user) {
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
+        }
         // Attach the decoded user information to the request
-        req.user = decoded;
-
+        req.user = user;
+        req.user.id = user._id
         // Proceed to the next middleware or route handler
         next();
     } catch (error) {

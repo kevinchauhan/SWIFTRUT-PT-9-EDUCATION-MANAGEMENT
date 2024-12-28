@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
+import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import axios from 'axios';
@@ -9,10 +10,10 @@ import { ToastContainer } from 'react-toastify';
 import 'antd/dist/reset.css';
 import PrivateRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
-
+import Courses from './pages/Course';
 
 function App() {
-  const { login, logout } = useAuthStore();
+  const { user, login, logout } = useAuthStore();
 
   axios.defaults.withCredentials = true;
 
@@ -38,25 +39,37 @@ function App() {
 
     checkAuthStatus();
   }, [login, logout]);
+
   return (
     <Router>
-      <div className="flex flex-col min-h-screen bg-violet-50">
+      <div className="bg-violet-50">
         <Header />
-        <main className="flex-grow container mx-auto px-4 py-6">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route
-              path="/dashboard"
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              }
-            />
-
-          </Routes>
-        </main>
+        <div style={{ display: 'flex', minHeight: '100vh' }}>
+          {/* Render Sidebar only if the user is logged in */}
+          {user && <Sidebar />}
+          <main style={{ flexGrow: 1, }}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/courses"
+                element={
+                  <PrivateRoute>
+                    <Courses />
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </main>
+        </div>
       </div>
       <ToastContainer position="top-center" autoClose={2000} hideProgressBar />
     </Router>
