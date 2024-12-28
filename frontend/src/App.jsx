@@ -6,6 +6,10 @@ import axios from 'axios';
 import useAuthStore from './store/authStore';
 import { useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
+import 'antd/dist/reset.css';
+import PrivateRoute from './components/ProtectedRoute';
+import Dashboard from './pages/Dashboard';
+
 
 function App() {
   const { login, logout } = useAuthStore();
@@ -42,6 +46,15 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
+
           </Routes>
         </main>
       </div>
