@@ -8,7 +8,7 @@ const enrollmentController = new EnrollmentController();
 
 router.post("/enroll", authenticate, authorize(["Admin"]), enrollmentController.enrollStudent);
 router.post("/remove", authenticate, authorize(["Admin"]), enrollmentController.removeStudent);
-router.get("/:courseId/enrolled", authenticate, authorize(["Admin", "Teacher"]), enrollmentControllergetEnrolledStudents);
-router.get("/my-courses", authenticate, authorize(["Student"]), enrollmentController.getStudentCourses);
+router.get("/students/:courseId", authenticate, authorize(["Admin", "Teacher"]), enrollmentController.getEnrolledStudents);
+router.get("/courses", authenticate, authorize(["Student"]), enrollmentController.getStudentCourses);
 
 export default router;

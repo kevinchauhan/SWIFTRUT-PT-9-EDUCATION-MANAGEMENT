@@ -6,8 +6,8 @@ import authorize from "../middlewares/authorize.js";
 const router = express.Router();
 const assignmentController = new AssignmentController();
 
-router.post("/assignments", authenticate, authorize(["Teacher"]), assignmentController.createAssignment);
-router.get("/assignments/:courseId", authenticate, assignmentController.getAssignments);
-router.post("/assignments/submit", authenticate, authorize(["Student"]), assignmentController.submitAssignment);
+router.post("/", authenticate, authorize(["Teacher"]), assignmentController.createAssignment);
+router.get("/:courseId", authenticate, assignmentController.getAssignments);
+router.post("/submit", authenticate, authorize(["Student"]), assignmentController.submitAssignment);
 
 export default router;
