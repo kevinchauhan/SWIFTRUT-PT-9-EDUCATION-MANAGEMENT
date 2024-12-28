@@ -24,10 +24,12 @@ const Sidebar = () => {
                 <Menu.Item key="/profile">
                     <Link to="/profile">Profile</Link>
                 </Menu.Item>
+                <Menu.Item key="/teachers">
+                    <Link to="/teachers">Teachers</Link>
+                </Menu.Item>
                 <Menu.Item key="/courses">
                     <Link to="/courses">Courses</Link>
                 </Menu.Item>
-
             </Menu>
         </Sider>
     );

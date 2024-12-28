@@ -11,6 +11,7 @@ import 'antd/dist/reset.css';
 import PrivateRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import Courses from './pages/Course';
+import Teachers from './pages/Teachers';
 
 function App() {
   const { user, login, logout } = useAuthStore();
@@ -56,6 +57,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <Dashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/teachers"
+                element={
+                  <PrivateRoute>
+                    <Teachers />
                   </PrivateRoute>
                 }
               />

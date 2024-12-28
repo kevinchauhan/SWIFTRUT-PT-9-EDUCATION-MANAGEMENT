@@ -7,6 +7,7 @@ const router = express.Router();
 const userController = new UserController();
 
 router.get("/", authenticate, authorize(["Admin"]), userController.listUsers);
+router.post("/", authenticate, authorize(["Admin"]), userController.createUser);
 router.patch("/role", authenticate, authorize(["Admin"]), userController.updateUserRole);
 router.delete("/:userId", authenticate, authorize(["Admin"]), userController.deleteUser);
 
