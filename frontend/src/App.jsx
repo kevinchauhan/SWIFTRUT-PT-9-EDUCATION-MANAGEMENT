@@ -12,6 +12,7 @@ import PrivateRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import Courses from './pages/Course';
 import Teachers from './pages/Teachers';
+import CourseDetails from './pages/CourseDetails';
 
 function App() {
   const { user, login, logout } = useAuthStore();

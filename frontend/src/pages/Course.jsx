@@ -1,8 +1,7 @@
-import { Layout, Card, Button, Row, Col, Spin, Alert, Modal, Form, Input, DatePicker, notification } from 'antd';
+import { Layout, Card, Button, Row, Col, Spin, Alert, Modal, Form, Input, DatePicker, notification, Select } from 'antd';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import Sidebar from '../components/Sidebar';
 
 const { Content } = Layout;
 
@@ -10,16 +9,22 @@ const Courses = () => {
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [teachers, setTeachers] = useState([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [form] = Form.useForm();
 
-    // Fetch courses
+    // Fetch courses and teachers
     useEffect(() => {
-        const fetchCourses = async () => {
+        const fetchData = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/courses`);
-                setCourses(response.data.courses);
+                // Fetching courses
+                const courseResponse = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/courses`);
+                setCourses(courseResponse.data.courses);
+
+                // Fetching teachers for the teacher dropdown
+                const teacherResponse = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/users?role=Teacher`);
+                setTeachers(teacherResponse.data.users);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -27,7 +32,7 @@ const Courses = () => {
             }
         };
 
-        fetchCourses();
+        fetchData();
     }, []);
 
     // Add a course
@@ -39,13 +44,13 @@ const Courses = () => {
                 description: values.description,
                 startDate: values.startDate,
                 endDate: values.endDate,        // Adding endDate to match controller
-                teacherId: values.instructor,  // Ensure you're passing the teacherId here
+                teacherId: values.teacher,  // Passing teacherId from the select input
             };
 
             const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/courses`, courseData);
             notification.success({
                 message: 'Course Added',
-                description: `Course "${response.data.name}" has been added successfully.`,
+                description: `Course "${response.data.course.title}" has been added successfully.`,
             });
             setCourses((prevCourses) => [...prevCourses, response.data]); // Add the new course to the list
             setIsModalVisible(false); // Close the modal
@@ -79,28 +84,33 @@ const Courses = () => {
     }
 
     return (
-        <Layout style={{ minHeight: '100vh' }}>
-            <Layout style={{ marginLeft: 200, padding: '0 24px 24px' }}>
+        <Layout style={{}}>
+            <Layout style={{ padding: '0 24px 24px' }}>
                 <Content style={{ padding: 24 }}>
                     <Button type="primary" onClick={showModal} style={{ marginBottom: '20px' }}>
                         Add New Course
                     </Button>
 
                     <Row gutter={16}>
-                        {courses.map((course) => (
-                            <Col span={8} key={course.id}>
-                                <Card
-                                    title={course.name}
-                                    bordered={false}
-                                    extra={<Button>Enroll</Button>}
-                                >
-                                    <p><strong>Instructor:</strong> {course.instructor}</p>
-                                    <p>{course.description}</p>
-                                    <Link to={`/courses/${course.id}`}>View Details</Link>
-                                </Card>
-                            </Col>
-                        ))}
+                        {courses.map((course) => {
+                            return (
+                                <Col span={8} key={course._id} style={{ paddingBottom: '16px' }}>
+                                    <Card
+                                        title={course.title}
+                                        bordered={false}
+                                        extra={<Button>Enroll</Button>}
+                                    >
+                                        <p><strong>Teacher:</strong> {course.teacher ? course.teacher.name : 'Not Assigned'}</p>
+                                        <p><strong>Description:</strong>{course.description}</p>
+                                        <p><strong>Start Date:</strong> {new Date(course.startDate).toLocaleDateString()}</p>
+                                        <p><strong>End Date:</strong> {new Date(course.endDate).toLocaleDateString()}</p>
+                                        {/* <Link to={`/courses/${course._id}`}>View Details</Link> */}
+                                    </Card>
+                                </Col>
+                            );
+                        })}
                     </Row>
+
                 </Content>
             </Layout>
 
@@ -130,12 +140,19 @@ const Courses = () => {
                     </Form.Item>
 
                     <Form.Item
-                        label="Instructor"
-                        name="instructor"
-                        rules={[{ required: true, message: 'Please input the instructor name!' }]}
+                        label="Teacher"
+                        name="teacher"
+                        rules={[{ required: true, message: 'Please select the teacher!' }]}
                     >
-                        <Input />
+                        <Select placeholder="Select teacher" onChange={(value) => form.setFieldsValue({ teacher: value })}>
+                            {teachers.map((teacher) => (
+                                <Select.Option key={teacher._id} value={teacher._id}>
+                                    {teacher.name}
+                                </Select.Option>
+                            ))}
+                        </Select>
                     </Form.Item>
+
 
                     <Form.Item
                         label="Start Date"
