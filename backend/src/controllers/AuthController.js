@@ -5,10 +5,14 @@ import { generateTokenAndSetCookie } from '../utils/generateToken.js';
 export class AuthController {
     async signup(req, res) {
         try {
-            const { email, password, name } = req.body;
+            const { email, password, name, role = "Student" } = req.body;
 
             if (!email || !password || !name) {
                 return res.status(400).json({ success: false, message: "All fields are required" });
+            }
+
+            if (role !== "Student" && req.user?.role !== "Admin") {
+                return res.status(403).json({ success: false, message: "Only Admin can assign non-student roles" });
             }
 
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -27,7 +31,6 @@ export class AuthController {
                 return res.status(400).json({ success: false, message: "Email already exists" });
             }
 
-
             const salt = await bcryptjs.genSalt(10);
             const hashedPassword = await bcryptjs.hash(password, salt);
 
@@ -38,6 +41,7 @@ export class AuthController {
                 email,
                 password: hashedPassword,
                 name,
+                role,
                 image,
             });
 
@@ -109,4 +113,6 @@ export class AuthController {
             return next(error)
         }
     }
+
+
 }
