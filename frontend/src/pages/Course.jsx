@@ -1,7 +1,9 @@
 import { Layout, Card, Button, Row, Col, Spin, Alert, Modal, Form, Input, DatePicker, notification, Select } from 'antd';
+import moment from 'moment';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import useAuthStore from '../store/authStore';
 
 const { Content } = Layout;
 
@@ -11,18 +13,17 @@ const Courses = () => {
     const [error, setError] = useState(null);
     const [teachers, setTeachers] = useState([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [editingCourse, setEditingCourse] = useState(null); // To track the course being edited
     const [form] = Form.useForm();
+    const { user } = useAuthStore();
 
-    // Fetch courses and teachers
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                // Fetching courses
                 const courseResponse = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/courses`);
                 setCourses(courseResponse.data.courses);
 
-                // Fetching teachers for the teacher dropdown
                 const teacherResponse = await axios.get(`${import.meta.env.VITE_BACKEND_API_URL}/api/users?role=Teacher`);
                 setTeachers(teacherResponse.data.users);
             } catch (err) {
@@ -35,29 +36,18 @@ const Courses = () => {
         fetchData();
     }, []);
 
-    // Add a course
-    const handleAddCourse = async (values) => {
+    const handleDelete = async (courseId) => {
         setLoading(true);
         try {
-            const courseData = {
-                title: values.name,            // Matching backend property
-                description: values.description,
-                startDate: values.startDate,
-                endDate: values.endDate,        // Adding endDate to match controller
-                teacherId: values.teacher,  // Passing teacherId from the select input
-            };
-
-            const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/courses`, courseData);
+            await axios.delete(`${import.meta.env.VITE_BACKEND_API_URL}/api/courses/${courseId}`);
+            setCourses(courses.filter(course => course._id !== courseId));
             notification.success({
-                message: 'Course Added',
-                description: `Course "${response.data.course.title}" has been added successfully.`,
+                message: 'Course Deleted',
+                description: 'The course has been successfully deleted.',
             });
-            setCourses((prevCourses) => [...prevCourses, response.data]); // Add the new course to the list
-            setIsModalVisible(false); // Close the modal
-            form.resetFields(); // Reset the form fields
         } catch (err) {
             notification.error({
-                message: 'Error Adding Course',
+                message: 'Error Deleting Course',
                 description: err.response?.data?.message || 'Something went wrong!',
             });
         } finally {
@@ -65,64 +55,175 @@ const Courses = () => {
         }
     };
 
-    // Show modal to add a course
-    const showModal = () => {
+    const handleAddOrEditCourse = async (values) => {
+        setLoading(true);
+        try {
+            const courseData = {
+                title: values.name,
+                description: values.description,
+                startDate: values.startDate,
+                endDate: values.endDate,
+                teacherId: values.teacher,
+                syllabus: values.syllabus,
+            };
+
+            if (editingCourse) {
+                // Update existing course
+                const response = await axios.put(
+                    `${import.meta.env.VITE_BACKEND_API_URL}/api/courses/${editingCourse._id}`,
+                    courseData
+                );
+                setCourses((prevCourses) =>
+                    prevCourses.map((course) =>
+                        course._id === editingCourse._id ? response.data.course : course
+                    )
+                );
+                notification.success({
+                    message: 'Course Updated',
+                    description: `Course "${response.data.course.title}" has been updated successfully.`,
+                });
+            } else {
+                // Add new course
+                const response = await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/courses`, courseData);
+                setCourses((prevCourses) => [...prevCourses, response.data]);
+                notification.success({
+                    message: 'Course Added',
+                    description: `Course "${response.data.course.title}" has been added successfully.`,
+                });
+            }
+
+            setIsModalVisible(false);
+            form.resetFields();
+        } catch (err) {
+            notification.error({
+                message: 'Error',
+                description: err.response?.data?.message || 'Something went wrong!',
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEdit = (course) => {
+        const transformedCourse = {
+            name: course.title,
+            description: course.description,
+            startDate: moment(course.startDate),
+            endDate: moment(course.endDate),
+            teacher: course.teacher?._id,
+            syllabus: course.syllabus,
+        };
+
+        form.setFieldsValue(transformedCourse);
+        setEditingCourse(course);
         setIsModalVisible(true);
     };
 
-    // Cancel modal
     const handleCancel = () => {
         setIsModalVisible(false);
+        setEditingCourse(null); // Reset editing course state
+        form.resetFields(); // Reset form fields
     };
 
-    if (loading) {
-        return <Spin size="large" />;
-    }
+    const handleEnroll = async (courseId) => {
+        setLoading(true);
+        try {
+            const response = await axios.post(
+                `${import.meta.env.VITE_BACKEND_API_URL}/api/enrollment/enroll`,
+                { courseId }
+            );
+            notification.success({
+                message: 'Enrolled Successfully',
+                description: `You have been enrolled in the course "${response.data.course.title}".`,
+            });
+        } catch (err) {
+            notification.error({
+                message: 'Error Enrolling',
+                description: err.response?.data?.message || 'Something went wrong!',
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    if (error) {
-        return <Alert message="Error" description={error} type="error" />;
-    }
 
     return (
-        <Layout style={{}}>
+        <Layout>
             <Layout style={{ padding: '0 24px 24px' }}>
                 <Content style={{ padding: 24 }}>
-                    <Button type="primary" onClick={showModal} style={{ marginBottom: '20px' }}>
-                        Add New Course
-                    </Button>
+                    {user?.role === 'Admin' && (
+                        <Button
+                            type="primary"
+                            onClick={() => {
+                                setEditingCourse(null); // Ensure the modal is for adding
+                                setIsModalVisible(true);
+                            }}
+                            style={{ marginBottom: '20px' }}
+                        >
+                            Add New Course
+                        </Button>
+                    )}
 
-                    <Row gutter={16}>
-                        {courses.map((course) => {
-                            return (
-                                <Col span={8} key={course._id} style={{ paddingBottom: '16px' }}>
-                                    <Card
-                                        title={course.title}
-                                        bordered={false}
-                                        extra={<Button>Enroll</Button>}
-                                    >
-                                        <p><strong>Teacher:</strong> {course.teacher ? course.teacher.name : 'Not Assigned'}</p>
-                                        <p><strong>Description:</strong>{course.description}</p>
-                                        <p><strong>Start Date:</strong> {new Date(course.startDate).toLocaleDateString()}</p>
-                                        <p><strong>End Date:</strong> {new Date(course.endDate).toLocaleDateString()}</p>
-                                        {/* <Link to={`/courses/${course._id}`}>View Details</Link> */}
-                                    </Card>
-                                </Col>
-                            );
-                        })}
+                    <Row gutter={[16, 16]}>
+                        {courses.map((course) => (
+                            <Col
+                                key={course._id}
+                                xs={24}
+                                sm={12}
+                                md={8}
+                                lg={6}
+                                xl={6}
+                                style={{ paddingBottom: '16px' }}
+                            >
+                                <Card
+                                    title={course.title}
+                                    bordered={false}
+                                    extra={
+                                        user?.role === 'Student' && (
+                                            <Button onClick={() => handleEnroll(course._id)}>Enroll</Button>
+                                        )
+                                    }
+                                >
+                                    <p>
+                                        <strong>Teacher:</strong> {course.teacher ? course.teacher.name : 'Not Assigned'}
+                                    </p>
+                                    <p>
+                                        <strong>Description:</strong> {course.description}
+                                    </p>
+                                    <p>
+                                        <strong>Start Date:</strong>{' '}
+                                        {new Date(course.startDate).toLocaleDateString()}
+                                    </p>
+                                    <p>
+                                        <strong>End Date:</strong> {new Date(course.endDate).toLocaleDateString()}
+                                    </p>
+
+                                    {user?.role === 'Admin' && (
+                                        <div>
+                                            <Button type="link" onClick={() => handleEdit(course)}>
+                                                Edit
+                                            </Button>
+                                            <Button danger onClick={() => handleDelete(course._id)}>
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    )}
+                                </Card>
+                            </Col>
+                        ))}
                     </Row>
-
                 </Content>
             </Layout>
 
-            {/* Modal for adding a course */}
+            {/* Modal for adding or editing a course */}
             <Modal
-                title="Add New Course"
+                title={editingCourse ? 'Edit Course' : 'Add New Course'}
                 visible={isModalVisible}
                 onCancel={handleCancel}
                 footer={null}
                 destroyOnClose
             >
-                <Form form={form} onFinish={handleAddCourse} layout="vertical">
+                <Form form={form} onFinish={handleAddOrEditCourse} layout="vertical">
                     <Form.Item
                         label="Course Name"
                         name="name"
@@ -144,7 +245,7 @@ const Courses = () => {
                         name="teacher"
                         rules={[{ required: true, message: 'Please select the teacher!' }]}
                     >
-                        <Select placeholder="Select teacher" onChange={(value) => form.setFieldsValue({ teacher: value })}>
+                        <Select placeholder="Select teacher">
                             {teachers.map((teacher) => (
                                 <Select.Option key={teacher._id} value={teacher._id}>
                                     {teacher.name}
@@ -152,7 +253,6 @@ const Courses = () => {
                             ))}
                         </Select>
                     </Form.Item>
-
 
                     <Form.Item
                         label="Start Date"
@@ -180,7 +280,7 @@ const Courses = () => {
 
                     <Form.Item>
                         <Button type="primary" htmlType="submit" loading={loading} style={{ width: '100%' }}>
-                            {loading ? 'Adding...' : 'Add Course'}
+                            {editingCourse ? 'Update Course' : 'Add Course'}
                         </Button>
                     </Form.Item>
                 </Form>

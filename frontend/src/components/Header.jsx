@@ -49,9 +49,9 @@ const AppHeader = () => {
                             </>
                         ) : (
                             <>
-                                <Menu.Item key="dashboard">
+                                {/* <Menu.Item key="dashboard">
                                     <Link to="/dashboard">Dashboard</Link>
-                                </Menu.Item>
+                                </Menu.Item> */}
                                 <Menu.Item key="logout">
                                     <Button onClick={handleLogout} type="link">Logout</Button>
                                 </Menu.Item>

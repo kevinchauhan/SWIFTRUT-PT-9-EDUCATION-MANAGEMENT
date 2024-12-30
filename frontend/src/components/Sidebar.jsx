@@ -18,8 +18,8 @@ const Sidebar = () => {
                 selectedKeys={[location.pathname]}
                 style={{ height: '100%', borderRight: 0 }}
             >
-                <Menu.Item key="/dashboard">
-                    <Link to="/dashboard">Dashboard</Link>
+                <Menu.Item key="/">
+                    <Link to="/">Dashboard</Link>
                 </Menu.Item>
                 <Menu.Item key="/profile">
                     <Link to="/profile">Profile</Link>
