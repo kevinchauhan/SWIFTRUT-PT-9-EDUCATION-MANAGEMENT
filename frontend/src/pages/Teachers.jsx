@@ -134,9 +134,9 @@ const Teachers = () => {
             key: 'actions',
             render: (_, teacher) => (
                 <div>
-                    <Button onClick={() => handleEditTeacher(teacher)} style={{ marginRight: '10px' }}>
+                    {/* <Button onClick={() => handleEditTeacher(teacher)} style={{ marginRight: '10px' }}>
                         Edit
-                    </Button>
+                    </Button> */}
                     <Button onClick={() => handleDeleteTeacher(teacher._id)} danger>
                         Delete
                     </Button>

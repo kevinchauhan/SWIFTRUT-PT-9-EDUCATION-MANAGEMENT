@@ -5,8 +5,8 @@ export class EnrollmentController {
     // Admin enrolls a student in a course
     async enrollStudent(req, res) {
         try {
-            const { courseId, studentId } = req.body;
-
+            const { courseId, } = req.body;
+            const studentId = req.user.id;
             if (!courseId || !studentId) {
                 return res.status(400).json({ success: false, message: "Course ID and Student ID are required" });
             }
@@ -72,7 +72,7 @@ export class EnrollmentController {
         try {
             const { courseId } = req.params;
 
-            const course = await Course.findById(courseId).populate("enrolledStudents", "name email");
+            const course = await Course.findById(courseId).populate("enrolledStudents", "_idname email");
             if (!course) {
                 return res.status(404).json({ success: false, message: "Course not found" });
             }

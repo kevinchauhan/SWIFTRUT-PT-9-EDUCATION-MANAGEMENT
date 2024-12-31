@@ -1,4 +1,4 @@
-import { Layout, Card, Button, Row, Col, Spin, Alert, Modal, Form, Input, DatePicker, notification, Select } from 'antd';
+import { Layout, Card, Button, Row, Col, Spin, Alert, Modal, Form, Input, DatePicker, notification, Select, List } from 'antd';
 import moment from 'moment';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -14,6 +14,9 @@ const Courses = () => {
     const [teachers, setTeachers] = useState([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingCourse, setEditingCourse] = useState(null); // To track the course being edited
+    const [selectedCourse, setSelectedCourse] = useState(null);
+    const [enrolledStudents, setEnrolledStudents] = useState([]);
+    const [studentModalVisible, setStudentModalVisible] = useState(false);
     const [form] = Form.useForm();
     const { user } = useAuthStore();
 
@@ -129,16 +132,51 @@ const Courses = () => {
         setLoading(true);
         try {
             const response = await axios.post(
-                `${import.meta.env.VITE_BACKEND_API_URL}/api/enrollment/enroll`,
+                `${import.meta.env.VITE_BACKEND_API_URL}/api/enrollments/enroll`,
                 { courseId }
             );
             notification.success({
                 message: 'Enrolled Successfully',
-                description: `You have been enrolled in the course "${response.data.course.title}".`,
+                description: `You have been enrolled in the course.`,
             });
         } catch (err) {
             notification.error({
                 message: 'Error Enrolling',
+                description: err.response?.data?.message || 'Something went wrong!',
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleViewStudents = async (course) => {
+        setLoading(true);
+        try {
+            setSelectedCourse(course);
+            setEnrolledStudents(course?.enrolledStudents);
+            setStudentModalVisible(true);
+        } catch (err) {
+            notification.error({
+                message: 'Error Fetching Students',
+                description: err.response?.data?.message || 'Something went wrong!',
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRemoveStudent = async (studentId) => {
+        setLoading(true);
+        try {
+            await axios.post(`${import.meta.env.VITE_BACKEND_API_URL}/api/enrollments/remove`, { courseId: selectedCourse._id, studentId });
+            setEnrolledStudents((prev) => prev.filter((student) => student._id !== studentId));
+            notification.success({
+                message: 'Student Removed',
+                description: 'The student has been removed from the course.',
+            });
+        } catch (err) {
+            notification.error({
+                message: 'Error Removing Student',
                 description: err.response?.data?.message || 'Something went wrong!',
             });
         } finally {
@@ -171,8 +209,8 @@ const Courses = () => {
                                 xs={24}
                                 sm={12}
                                 md={8}
-                                lg={6}
-                                xl={6}
+                                lg={8}
+                                xxl={6}
                                 style={{ paddingBottom: '16px' }}
                             >
                                 <Card
@@ -205,6 +243,9 @@ const Courses = () => {
                                             </Button>
                                             <Button danger onClick={() => handleDelete(course._id)}>
                                                 Delete
+                                            </Button>
+                                            <Button onClick={() => handleViewStudents(course)}>
+                                                View Students
                                             </Button>
                                         </div>
                                     )}
@@ -270,13 +311,7 @@ const Courses = () => {
                         <DatePicker style={{ width: '100%' }} />
                     </Form.Item>
 
-                    <Form.Item
-                        label="Syllabus"
-                        name="syllabus"
-                        rules={[{ required: true, message: 'Please input the syllabus!' }]}
-                    >
-                        <Input.TextArea rows={4} />
-                    </Form.Item>
+
 
                     <Form.Item>
                         <Button type="primary" htmlType="submit" loading={loading} style={{ width: '100%' }}>
@@ -284,6 +319,30 @@ const Courses = () => {
                         </Button>
                     </Form.Item>
                 </Form>
+            </Modal>
+
+            <Modal
+                title={`Enrolled Students - ${selectedCourse?.title || ''}`}
+                visible={studentModalVisible}
+                onCancel={() => setStudentModalVisible(false)}
+                footer={null}
+                destroyOnClose
+            >
+                <List
+                    dataSource={enrolledStudents}
+                    renderItem={(student, i) => (
+                        <List.Item
+                            actions={[
+                                <Button size={'small'} key={i} danger onClick={() => handleRemoveStudent(student._id)}>
+                                    Remove
+                                </Button>,
+                            ]}
+                        >
+                            {`${i + 1}. ${student.name}`}
+                        </List.Item>
+                    )}
+                />
+
             </Modal>
         </Layout>
     );

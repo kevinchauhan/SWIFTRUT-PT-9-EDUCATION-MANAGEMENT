@@ -36,16 +36,15 @@ export class CourseController {
     async getCourses(req, res) {
         try {
             const { role, id } = req.user;
-            let courses;
-            if (role === "Admin") {
-                courses = await Course.find().populate("teacher", "name email");
-            } else if (role === "Teacher") {
-                courses = await Course.find({ teacher: id });
-            } else if (role === "Student") {
-                courses = await Course.find({ enrolledStudents: id });
-            } else {
-                return res.status(403).json({ success: false, message: "Unauthorized" });
-            }
+            let courses = await Course.find().populate("teacher", "name email").populate("enrolledStudents", "_id name email");
+            // if (role === "Admin") {
+            // } else if (role === "Teacher") {
+            //     courses = await Course.find({ teacher: id });
+            // } else if (role === "Student") {
+            //     courses = await Course.find({ enrolledStudents: id });
+            // } else {
+            //     return res.status(403).json({ success: false, message: "Unauthorized" });
+            // }
 
             res.status(200).json({ success: true, courses });
         } catch (error) {

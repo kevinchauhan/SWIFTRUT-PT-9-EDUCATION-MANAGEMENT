@@ -18,7 +18,7 @@ const Login = () => {
             notification.success({
                 message: 'Login Successful',
             });
-            navigate('/dashboard'); // redirect to dashboard
+            navigate('/'); // redirect to dashboard
         } catch (error) {
             notification.error({
                 message: 'Login Failed',
